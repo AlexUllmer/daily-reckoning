@@ -1,1 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+<title>Daily Reckoning</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#111;--bg2:#181818;--bg3:#1e1e1e;--border:#252525;--text:#d0d0d0;--muted:#666;--dim:#3a3a3a;--gold:#c9a84c;--green:#5a9e72;--red:#c0504a}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:Georgia,serif;color:var(--text);display:flex;flex-direction:column}
+#header{background:var(--bg);border-bottom:1px solid var(--border);padding:14px 20px 12px;flex-shrink:0}
+.eyebrow{font-family:'Source Code Pro',monospace;font-size:9px;letter-spacing:4px;color:var(--dim);text-transform:uppercase;margin-bottom:3px;display:flex;align-items:center;gap:8px}
+.app-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--gold)}
+.sdot{width:7px;height:7px;border-radius:50%;background:#333;transition:background .3s}
+.sdot.syncing{background:var(--gold);animation:pulse 1s infinite}
+.sdot.ok{background:var(--green)}
+.sdot.err{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+#scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:80px}
+#bnav{background:var(--bg2);border-top:1px solid var(--border);display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;cursor:pointer;padding:10px 4px}
+.nb .ni{font-size:20px;line-height:1}
+.nb .nl{font-family:'Source Code Pro',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--dim)}
+.nb.on .nl{color:var(--gold)}
+.page{display:none}
+.page.active{display:block}
+.qbar{border-left:3px solid #c9a84c22;padding:12px 16px;margin:14px 16px;color:#555;font-size:12px;font-style:italic;line-height:1.7}
+.srow{padding:16px 20px 12px;display:flex;align-items:center;gap:16px}
+.snum{font-family:'Playfair Display',serif;font-size:56px;font-weight:900;line-height:1}
+.sright{flex:1}
+.slbl{font-family:'Source Code Pro',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px}
+.pt{height:4px;background:var(--bg3);border-radius:2px}
+.pf{height:100%;border-radius:2px;transition:width .5s}
+.stitle{font-family:'Source Code Pro',monospace;font-size:9px;letter-spacing:4px;color:var(--dim);text-transform:uppercase;padding:18px 20px 8px;display:flex;align-items:center;gap:10px}
+.sl{flex:1;height:1px;background:var(--border)}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:0 16px 12px;padding:16px}
+.mgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.mbtn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:all .15s}
+.mbtn .mn{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;line-height:1}
+.mbtn .ml{font-family:'Source Code Pro',monospace;font-size:8px;color:var(--dim);text-align:center;line-height:1.3}
+.citem{margin-bottom:16px}
+.citem:last-child{margin-bottom:0}
+.ctop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.cname{font-size:14px;color:var(--text)}
+.cstreak{font-family:'Source Code Pro',monospace;font-size:11px}
+.ccells{display:flex;gap:3px}
+.ccell{flex:1;height:32px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;transition:background .2s}
+.cdates{display:flex;justify-content:space-between;margin-top:5px}
+.cdate{font-family:'Source Code Pro',monospace;font-size:8px;color:var(--dim)}
+.hrow{display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);gap:12px;min-height:60px}
+.hrow:last-child{border-bottom:none}
+.hchk{width:28px;height:28px;border:2px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:14px;transition:all .15s;user-select:none}
+.hico{font-size:20px;flex-shrink:0;opacity:.5}
+.hlbl{flex:1;font-size:15px;line-height:1.3;cursor:pointer}
+.hlbl.done{color:var(--muted);text-decoration:line-through}
+.hsk{font-family:'Source Code Pro',monospace;font-size:11px;color:var(--muted);flex-shrink:0}
+.hsk.hot{color:var(--gold)}
+.hbtn{background:none;border:none;font-size:20px;cursor:pointer;flex-shrink:0;padding:4px;opacity:.2;transition:opacity .15s}
+.hbtn.on{opacity:1}
+.hnote{padding:8px 20px 12px 60px;font-style:italic;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);line-height:1.6}
+.wtag{font-family:'Source Code Pro',monospace;font-size:9px;color:var(--dim);letter-spacing:1px;display:block;margin-top:2px}
+.chdr{font-family:'Source Code Pro',monospace;font-size:9px;letter-spacing:4px;text-transform:uppercase;padding:14px 20px 6px;display:flex;align-items:center;gap:10px}
+.chl{flex:1;height:1px}
+.gtog{display:flex;margin:0 16px 12px}
+.gtog .gb{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--muted);font-family:'Source Code Pro',monospace;font-size:10px;letter-spacing:2px;padding:10px;cursor:pointer;text-transform:uppercase;transition:all .15s}
+.gtog .gb:first-child{border-radius:6px 0 0 6px}
+.gtog .gb:last-child{border-radius:0 6px 6px 6px;border-left:none}
+.gtog .gb.on{background:#c9a84c15;border-color:#c9a84c55;color:var(--gold)}
+.dgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:0 16px 16px}
+.dcell{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 4px}
+.dcell.today{border-color:#c9a84c44}
+.dnm{font-family:'Source Code Pro',monospace;font-size:7px;letter-spacing:1px;color:var(--dim);margin-bottom:4px;text-align:center}
+.dnm.today{color:var(--gold)}
+.dpct{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;text-align:center;line-height:1;margin-bottom:2px}
+.dsub{font-family:'Source Code Pro',monospace;font-size:7px;color:var(--dim);text-align:center}
+.dmood{font-family:'Source Code Pro',monospace;font-size:7px;text-align:center;margin-top:2px}
+.ddots{display:flex;flex-wrap:wrap;gap:2px;margin-top:4px;justify-content:center}
+.dot{width:5px;height:5px;border-radius:1px}
+.vbox{margin:0 16px 16px;background:var(--bg2);border:1px solid var(--border);border-left-width:4px;border-radius:0 8px 8px 0;padding:14px 16px}
+.vscore{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:4px}
+.vmsg{font-size:13px;color:var(--muted);font-style:italic;line-height:1.5}
+.bsec{padding:0 16px;margin-bottom:16px}
+.brow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.blbl{font-family:'Source Code Pro',monospace;font-size:10px;color:#888;width:120px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btr{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.bfill{height:100%;border-radius:4px;transition:width .5s}
+.bpct{font-family:'Source Code Pro',monospace;font-size:10px;color:var(--muted);width:32px;text-align:right;flex-shrink:0}
+.hsec{padding:0 16px;overflow-x:auto;padding-bottom:8px;margin-bottom:8px}
+.heatrow{display:flex;align-items:center;gap:3px;margin-bottom:5px}
+.heatlbl{font-family:'Source Code Pro',monospace;font-size:9px;color:var(--muted);width:100px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.heatcell{width:16px;height:16px;border-radius:2px;flex-shrink:0}
+.mchwrap{display:flex;gap:6px;align-items:flex-end;height:70px;padding:0 16px;margin-bottom:12px}
+.mchcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end}
+.mchbar{width:100%;border-radius:3px 3px 0 0;transition:height .4s}
+.mchlbl{font-family:'Source Code Pro',monospace;font-size:7px;color:var(--dim)}
+textarea{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:Georgia,serif;font-size:14px;padding:14px;width:100%;resize:vertical;min-height:100px;outline:none;line-height:1.7;border-radius:8px;-webkit-appearance:none}
+textarea:focus{border-color:#c9a84c44}
+.btn{background:none;border:1px solid #c9a84c88;color:var(--gold);font-family:'Source Code Pro',monospace;font-size:11px;letter-spacing:2px;padding:12px 20px;cursor:pointer;text-transform:uppercase;border-radius:6px;transition:all .15s;-webkit-appearance:none;display:inline-block;text-align:center}
+.btn:active{background:#c9a84c15}
+.btn.ghost{border-color:var(--border);color:var(--muted)}
+.btn.danger{border-color:#c0504a66;color:var(--red)}
+.btn.full{width:100%}
+.btn.sm{padding:8px 14px;font-size:10px}
+input[type=text]{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Source Code Pro',monospace;font-size:14px;padding:14px;outline:none;border-radius:8px;width:100%;-webkit-appearance:none}
+input[type=text]:focus{border-color:#c9a84c44}
+select{background:var(--bg3);border:1px solid var(--border);color:#888;font-family:'Source Code Pro',monospace;font-size:12px;padding:12px;outline:none;border-radius:8px;-webkit-appearance:none;flex:1}
+.rcard{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin:0 16px 8px;overflow:hidden}
+.rchead{display:flex;justify-content:space-between;align-items:center;padding:16px;cursor:pointer}
+.rcwk{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--gold)}
+.rcdt{font-family:'Source Code Pro',monospace;font-size:9px;color:var(--dim);margin-top:2px}
+.rcavg{font-family:'Playfair Display',serif;font-size:32px;font-weight:900}
+.rcbody{display:none;border-top:1px solid var(--border);padding:16px}
+.rcard.open .rcbody{display:block}
+.rdgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px;text-align:center}
+.rcrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bg3)}
+.overlay{position:fixed;inset:0;background:#000d;z-index:300;display:none;align-items:flex-end;justify-content:center}
+.overlay.active{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px 16px 0 0;padding:24px 20px calc(24px + env(safe-area-inset-bottom));width:100%;max-height:85vh;overflow-y:auto}
+.mhandle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px}
+.mtitle{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--gold);margin-bottom:4px}
+.msub{font-family:'Source Code Pro',monospace;font-size:10px;color:var(--muted);margin-bottom:20px;letter-spacing:1px}
+.hmrow{padding:14px 20px;border-bottom:1px solid var(--border)}
+.hmrow:last-child{border-bottom:none}
+.hmtop{display:flex;align-items:center;gap:10px}
+.hmico{font-size:20px;opacity:.5;flex-shrink:0}
+.hmnm{flex:1;font-size:14px;color:var(--text)}
+.hmtag{font-family:'Source Code Pro',monospace;font-size:9px;padding:3px 8px;border-radius:4px}
+.strwrap{margin-top:8px;display:flex;align-items:center;gap:8px;padding-left:30px}
+.strlbl{font-family:'Source Code Pro',monospace;font-size:9px;color:var(--dim);width:100px;flex-shrink:0}
+.strtr{flex:1;height:4px;background:var(--bg3);border-radius:2px}
+.strfill{height:100%;border-radius:2px}
+.strpct{font-family:'Source Code Pro',monospace;font-size:9px;color:var(--muted);width:28px;text-align:right}
+.fdrow{display:flex;align-items:center;gap:10px;padding:10px 20px;border-bottom:1px solid var(--border)}
+.fddot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.fdlbl{flex:1;font-size:13px}
+.pass{color:#5a9e72}.warn{color:#c9a84c}.fail{color:#c0504a}
+.fbubble{background:var(--bg2);border-left:4px solid #c9a84c44;border-radius:0 8px 8px 0;padding:14px 16px;margin:0 16px 16px;font-size:14px;color:var(--muted);font-style:italic;line-height:1.7}
+.saveok{font-family:'Source Code Pro',monospace;font-size:10px;color:var(--green);letter-spacing:2px;display:none;margin-left:10px}
+.saveok.show{display:inline}
+#loadscreen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:16px}
+.ldtitle{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;color:var(--gold)}
+.ldsub{font-family:'Source Code Pro',monospace;font-size:10px;color:var(--dim);letter-spacing:3px}
+.lddots{display:flex;gap:8px}
+.lddot{width:8px;height:8px;border-radius:50%;background:var(--border);animation:ld 1.2s infinite}
+.lddot:nth-child(2){animation-delay:.2s}
+.lddot:nth-child(3){animation-delay:.4s}
+@keyframes ld{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+.sp{height:20px}
+.hblock{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div id="loadscreen">
+  <div class="ldtitle">Daily Reckoning</div>
+  <div class="lddots"><div class="lddot"></div><div class="lddot"></div><div class="lddot"></div></div>
+  <div class="ldsub" id="ldmsg">SYNCING...</div>
+</div>
+<div id="header">
+  <div class="eyebrow">Daily Reckoning <div class="sdot" id="sdot"></div><span id="slbl" style="font-size:9px;color:var(--dim);letter-spacing:2px"></span></div>
+  <div class="app-title">Accountability Record</div>
+</div>
+<div id="scroll">
+  <div id="page-today"   class="page active"></div>
+  <div id="page-week"    class="page"></div>
+  <div id="page-reports" class="page"></div>
+  <div id="page-manage"  class="page"></div>
+  <div id="page-friend"  class="page"></div>
+</div>
+<div id="bnav">
+  <button class="nb on" onclick="showPage('today',this)"><span class="ni">☀️</span><span class="nl">Today</span></button>
+  <button class="nb" onclick="showPage('week',this)"><span class="ni">📊</span><span class="nl">Week</span></button>
+  <button class="nb" onclick="showPage('reports',this)"><span class="ni">📋</span><span class="nl">Reports</span></button>
+  <button class="nb" onclick="showPage('manage',this)"><span class="ni">⚙️</span><span class="nl">Habits</span></button>
+  <button class="nb" onclick="showPage('friend',this)"><span class="ni">👁</span><span class="nl">Friend</span></button>
+</div>
+<div class="overlay" id="photo-ov" onclick="if(event.target===this)closeModal('photo-ov')">
+  <div class="modal">
+    <div class="mhandle"></div><div class="mtitle">Photo Evidence</div>
+    <div class="msub" id="photo-lbl"></div>
+    <img id="photo-prev" style="display:none;width:100%;max-height:220px;object-fit:cover;border-radius:8px;border:1px solid #222;margin-bottom:16px"/>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn full" onclick="document.getElementById('photo-file').click()">Upload Photo</button>
+      <button class="btn ghost full" onclick="closeModal('photo-ov')">Cancel</button>
+    </div>
+    <input type="file" id="photo-file" accept="image/*" style="display:none" onchange="handlePhoto(event)"/>
+    <p style="font-family:'Source Code Pro',monospace;font-size:10px;color:#333;margin-top:12px;text-align:center">Uploading marks the habit as done</p>
+  </div>
+</div>
+<div class="overlay" id="note-ov" onclick="if(event.target===this)closeModal('note-ov')">
+  <div class="modal">
+    <div class="mhandle"></div><div class="mtitle">Daily Note</div>
+    <div class="msub" id="note-lbl"></div>
+    <textarea id="note-ta" placeholder="Add context to this entry…" style="margin-bottom:14px"></textarea>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn full" onclick="saveNote()">Save Note</button>
+      <button class="btn ghost full" onclick="closeModal('note-ov')">Cancel</button>
+    </div>
+  </div>
+</div>
+<script>
 
