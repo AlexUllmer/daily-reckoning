@@ -486,13 +486,13 @@ function render(){
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
-(async()=>{
-  document.getElementById('ldmsg').textContent="SYNCING...";
-  const ok=await loadBin();
-  document.getElementById('ldmsg').textContent=ok?"READY":"OFFLINE MODE";
-  document.getElementById('loadscreen').style.display='none';
-  render();
-})();
+// Show app immediately, sync in background
+document.getElementById('loadscreen').style.display='none';
+render();
+loadBin().then(ok=>{
+  if(ok){ syncStatus("ok","synced"); render(); setTimeout(()=>syncStatus("",""),2000); }
+  else{ syncStatus("err","offline"); }
+});
 </script>
 </body>
 </html>
